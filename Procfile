@@ -1,0 +1,1 @@
+web: ./build.sh; gunicorn govuk-frontend-wtf:app --log-file -
