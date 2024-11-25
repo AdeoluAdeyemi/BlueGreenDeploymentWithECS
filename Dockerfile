@@ -1,33 +1,21 @@
-# Pull base image
-FROM python:3.10-alpine3.19
+FROM python:3.8.0-alpine3.10
+# Python docker images: https://github.com/docker-library/docs/tree/master/python/
 
-# Set working directory
-WORKDIR /usr/src/app
+USER root
 
-# Copy requirement files
-COPY requirements.txt .
+# Copy the src
+WORKDIR /app
+COPY src/ /app/src/
+COPY ./requirements.txt /app
+RUN ls -la /app
 
-# Install requirements
-RUN apk add curl && \
-    apk add unzip
-    
-# Download requirements
-RUN pip install --no-cache-dir -r requirements.txt
+# Install python dependencies
+RUN python3 --version
+RUN pip3 install --upgrade pip
+RUN pip3 install --no-cache-dir -r /app/requirements.txt
+RUN pip3 list --format=columns
 
-# Copy application files to container
-COPY . .
+USER 1001
 
-# Get new release distribution assets and move to static directory
-RUN curl -L https://github.com/alphagov/govuk-frontend/releases/download/v4.5.0/release-v4.5.0.zip > govuk_frontend.zip && \
-    unzip -o govuk_frontend.zip -d ./app/static && \
-    mv ./app/static/assets/* ./app/static && \
-    rm -rf ./app/static/assets && \
-    rm -rf ./govuk_frontend.zip
-
-ENV PATH="/usr/src/app:${PATH}"
-
-# Expose container port
-EXPOSE 5000
-
-# Execute application
-CMD ["python3", "-m", "flask", "run", "-h", "0.0.0.0", "-p", "5000"]
+# EXPOSE 5001
+ENTRYPOINT ["python3", "/app/src/app.py"]
