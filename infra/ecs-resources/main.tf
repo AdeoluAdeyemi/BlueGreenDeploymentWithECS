@@ -163,7 +163,7 @@ module "ecs" {
       }
 
       subnet_ids           = local.network_resource_output["subnet_id"]
-      security_group_ids   = local.network_resource_output["security_group_ids"]          
+      security_group_ids   = [local.network_resource_output["security_group_ids"]]       
     }
   }
 
