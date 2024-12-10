@@ -240,7 +240,7 @@ resource "aws_ssm_parameter" "network_resource_output" {
   type        = "SecureString"
   value       = jsonencode({
     "subnet_id" : module.vpc.public_subnets,
-    "security_group_ids" : [module.alb_security_group.security_group_id],
+    "security_group_ids" : module.alb_security_group.security_group_id,
     "aws_lb_blue_tg_arn" : aws_lb_target_group.tg_blue.arn,
     "aws_lb_blue_tg_name" : aws_lb_target_group.tg_blue.name,
     "aws_lb_green_tg_name" : aws_lb_target_group.tg_green.name,
