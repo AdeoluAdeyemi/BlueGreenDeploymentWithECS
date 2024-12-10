@@ -4,7 +4,7 @@ terraform {
     organization = "Adeolus_Private_Lab"
     
     workspaces {
-      name = "bgd-deploy"
+      name = "bgd-dpl-dev-codedeploy"
     }
   }
   

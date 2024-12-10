@@ -143,14 +143,14 @@ module "ecs" {
       }
 
       # service_connect_configuration = {
-      #   namespace = "example"
+      #   namespace = "${local.name_prefix}"
       #   service = {
       #     client_alias = {
-      #       port     = 80
-      #       dns_name = "ecs-sample"
+      #       port     = local.port
+      #       dns_name = "${local.name_prefix}"
       #     }
-      #     port_name      = "ecs-sample"
-      #     discovery_name = "ecs-sample"
+      #     port_name      = "${local.name_prefix}"
+      #     discovery_name = "${local.name_prefix}"
       #   }
       # }
 
@@ -163,9 +163,20 @@ module "ecs" {
       }
 
       subnet_ids           = local.network_resource_output["subnet_id"]
-      security_group_ids   = [local.network_resource_output["security_group_ids"]]       
+      security_group_ids   = [local.network_resource_output["security_group_ids"]] 
+      assign_public_ip = true      
     }
   }
 
   tags = local.tags
+}
+
+resource "aws_ssm_parameter" "ecs_resource_output" {
+  name        = "/${local.name_prefix}/ecs_resource_output"
+  description = "The parameter store for ecs resource output"
+  type        = "SecureString"
+  value       = jsonencode({
+    "cluster_name" : module.ecs.cluster_name,
+    "service_name" : keys(module.ecs.services)[0]   //lookup(module.ecs.services["service_a"], "url", "test_service_name")
+  })
 }
