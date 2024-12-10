@@ -55,33 +55,33 @@ provider "aws" {
 #   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 # }
 
-module "ecr" {
-  source = "terraform-aws-modules/ecr/aws"
-  version = "2.3.0"
+# module "ecr" {
+#   source = "terraform-aws-modules/ecr/aws"
+#   version = "2.3.0"
   
-  repository_name = "ecr-${local.name_prefix}"
+#   repository_name = "ecr-${local.name_prefix}"
 
-  repository_read_write_access_arns = [aws_iam_role.ecr_terraform.arn]
-  repository_lifecycle_policy = jsonencode({
-    rules = [
-      {
-        rulePriority = 1,
-        description  = "Keep last 30 images",
-        selection = {
-          tagStatus     = "tagged",
-          tagPrefixList = ["v"],
-          countType     = "imageCountMoreThan",
-          countNumber   = 30
-        },
-        action = {
-          type = "expire"
-        }
-      }
-    ]
-  })
+#   repository_read_write_access_arns = [aws_iam_role.ecr_terraform.arn]
+#   repository_lifecycle_policy = jsonencode({
+#     rules = [
+#       {
+#         rulePriority = 1,
+#         description  = "Keep last 30 images",
+#         selection = {
+#           tagStatus     = "tagged",
+#           tagPrefixList = ["v"],
+#           countType     = "imageCountMoreThan",
+#           countNumber   = 30
+#         },
+#         action = {
+#           type = "expire"
+#         }
+#       }
+#     ]
+#   })
 
-  tags = local.tags
-}
+#   tags = local.tags
+# }
 
 
 module "ecs" {
