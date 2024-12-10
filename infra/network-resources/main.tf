@@ -156,6 +156,7 @@ resource "aws_lb_target_group" "tg_blue" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = module.vpc.vpc_id
+  target_type = "ip"
 
   tags = local.tags
 
@@ -175,6 +176,8 @@ resource "aws_lb_target_group" "tg_green" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = module.vpc.vpc_id
+  target_type = "ip"
+  
   tags = local.tags
 
   
