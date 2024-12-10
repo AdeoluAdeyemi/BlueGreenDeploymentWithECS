@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Name of the project"
   type = string
-  default = "bgd-depl"
+  default = "bgd-dpl"
 }
 
 variable "environment" {
@@ -25,7 +25,6 @@ variable "resources_tags" {
 variable "container_image_url" {
   description = "URL of container image"
   type = string
-  default = ""
 }
 
 variable "container_port" {

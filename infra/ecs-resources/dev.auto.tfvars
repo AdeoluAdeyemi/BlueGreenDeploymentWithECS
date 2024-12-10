@@ -1,0 +1,1 @@
+container_image_url="864981713133.dkr.ecr.us-east-1.amazonaws.com/ecr-bgd-dpl-dev:1.0.0"
