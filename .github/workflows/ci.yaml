@@ -26,6 +26,8 @@ jobs:
       #====================================#
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: infra  # the branch that contains the Terraform code
 
       #====================================#
       # Configure AWS credentials
@@ -75,6 +77,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      #====================================#
+      # Checkout repository into runner
+      #====================================#
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: infra  # the branch that contains the Terraform code
+          
       #====================================#
       # Configure AWS credentials
       #====================================#
