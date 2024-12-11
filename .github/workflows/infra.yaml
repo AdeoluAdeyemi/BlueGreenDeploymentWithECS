@@ -10,8 +10,6 @@ env:
   AWS_REGION: us-east-1  
   PROJECT_NAME: bgd-dpl
   PROJECT_ENV: dev                 
-  DOCKER_BUILD_DIR: ./
-  DOCKER_FILE: Dockerfile
 
 #Jobs
 jobs:
@@ -30,7 +28,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: infra/network-resources/  # the branch that contains the Terraform code
+          ref: infra  # the branch that contains the Terraform code
 
       #====================================#
       # Configure AWS credentials
