@@ -102,6 +102,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3.1.1
         with:
           terraform_version: 1.8.5
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
           
 
       #================================#
