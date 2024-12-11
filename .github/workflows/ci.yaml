@@ -1,4 +1,4 @@
-name: Capstone CI-CD Workflow
+name: CI Workflow
 
 #Events
 on:
@@ -142,6 +142,6 @@ jobs:
 
       - name: Terraform Apply
         id: apply
-        working-directory: infra/
+        working-directory: infra/ecs-resources/task-definition/
         run: terraform apply  -var-file="prod.tfvars" -auto-approve
   
