@@ -1,0 +1,147 @@
+name: Capstone CI-CD Workflow
+
+#Events
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  PROJECT_NAME: bgd-dpl
+  PROJECT_ENV: dev                
+  DOCKER_BUILD_DIR: ./
+  DOCKER_FILE: Dockerfile
+
+#Jobs
+jobs:
+  build_docker_image:      
+    name: Build, tag, and push docker image
+
+    runs-on: ubuntu-latest
+
+    steps:
+      #====================================#
+      # Checkout repository into runner
+      #====================================#
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      #====================================#
+      # Configure AWS credentials
+      #====================================#
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      #========================================#
+      # Build docker image 
+      # and push to AWS ECR Repo
+      #========================================#
+      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2.0.1
+
+      - name: Check Dockerfile exist
+        id: check-dockerfile
+        run: |
+          ls -l ./
+          test -f "${{ env.DOCKER_FILE }}" || { echo "No Dockerfile found in $PWD"; exit 1; }
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-publish
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: "ecr-${{ env.PROJECT_NAME}}-${{ env.PROJECT_ENV }}"
+          IMAGE_TAG: ${{ github.ref_name }}
+        run: |
+          docker build "${{ env.DOCKER_BUILD_DIR }}" -f "${{ env.DOCKER_FILE }}" -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "IMAGE $IMAGE_TAG is pushed to $ECR_REGISTRY/$ECR_REPOSITORY"
+          echo "image_tag=$IMAGE_TAG" 
+          echo "full_image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+  
+  update_task_definition:
+    name: Update AWS ECS Task Definition
+    defaults:
+      run:
+        shell: bash
+
+    needs: build_docker_image
+    runs-on: ubuntu-latest
+
+    steps:
+      #====================================#
+      # Configure AWS credentials
+      #====================================#
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+    
+      #======================================#
+      # Install Terraform and its dependencies
+      #======================================#
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3.1.1
+        with:
+          terraform_version: 1.8.5
+          
+
+      #================================#
+      # Dynamically create tfvars file
+      #================================#
+      - name: Generate tfvars file
+        id: tfvars
+        run: |
+          touch prod.tfvars
+          echo "aws_region = \"${{ env.AWS_REGION }}\"" >> prod.tfvars
+          echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> prod.tfvars
+          echo "environment = \"${{ env.PROJECT_ENV }}\"" >> prod.tfvars
+
+          cat prod.tfvars
+        working-directory: infra/ecs-resources/task-definition/
+
+      #=============================#
+      # Terraform Init
+      #=============================#
+      - name: Terraform Init
+        id: init
+        run: terraform init   
+        working-directory: infra/ecs-resources/task-definition/
+
+      #=============================#
+      # Terraform Validate.
+      #=============================#
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+        working-directory: infra/ecs-resources/task-definition/
+
+      #===================================================#
+      # Terraform Plan AWS VPC, & Other Resources Creation
+      #===================================================#
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan  -var-file="prod.tfvars" -no-color
+        working-directory: infra/ecs-resources/task-definition/
+        continue-on-error: true
+
+      #===================================================#
+      # Terraform Apply Infrastructure Creation
+      #===================================================#
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        id: apply
+        working-directory: infra/
+        run: terraform apply  -var-file="prod.tfvars" -auto-approve
+  
