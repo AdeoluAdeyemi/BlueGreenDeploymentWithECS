@@ -6,7 +6,6 @@ locals {
   name_prefix = "${var.project_name}-${var.environment}"
 
   port = var.container_port
-  image_url = var.container_image_url
   
   network_resource_output = jsondecode(data.aws_ssm_parameter.network_resources.value)
 
@@ -54,33 +53,10 @@ provider "aws" {
 #   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 # }
 
-# module "ecr" {
-#   source = "terraform-aws-modules/ecr/aws"
-#   version = "2.3.0"
-  
-#   repository_name = "ecr-${local.name_prefix}"
 
-#   repository_read_write_access_arns = [aws_iam_role.ecr_terraform.arn]
-#   repository_lifecycle_policy = jsonencode({
-#     rules = [
-#       {
-#         rulePriority = 1,
-#         description  = "Keep last 30 images",
-#         selection = {
-#           tagStatus     = "tagged",
-#           tagPrefixList = ["v"],
-#           countType     = "imageCountMoreThan",
-#           countNumber   = 30
-#         },
-#         action = {
-#           type = "expire"
-#         }
-#       }
-#     ]
-#   })
-
-#   tags = local.tags
-# }
+data "aws_ecs_task_definition" "task_def" {
+  task_definition = local.name_prefix
+}
 
 
 module "ecs" {
@@ -111,36 +87,39 @@ module "ecs" {
     "${local.name_prefix}-service" = {
       cpu    = 1024
       memory = 2048
+      
+      create_task_definition = false
+      task_definition_arn  = data.aws_ecs_task_definition.task_def.arn
 
       # Container definition(s)
-      container_definitions = {
-        "${local.name_prefix}" = {
-          cpu       = 1024
-          memory    = 2048
-          essential = true
-          image     = local.image_url
-          port_mappings = [
-            {
-              name          = "${local.name_prefix}"
-              containerPort = local.port
-              hostPort      = local.port
-              #protocol      = "tcp"
-            }
-          ]
+      # container_definitions = {
+      #   "${local.name_prefix}" = {
+      #     cpu       = 1024
+      #     memory    = 2048
+      #     essential = true
+      #     image     = local.image_url
+      #     port_mappings = [
+      #       {
+      #         name          = "${local.name_prefix}"
+      #         containerPort = local.port
+      #         hostPort      = local.port
+      #         #protocol      = "tcp"
+      #       }
+      #     ]
 
-          enable_cloudwatch_logging = false
-          # log_configuration = {
-          #   logDriver = "awsfirelens"
-          #   options = {
-          #     Name                    = "firehose"
-          #     region                  = "eu-west-1"
-          #     delivery_stream         = "my-stream"
-          #     log-driver-buffer-limit = "2097152"
-          #   }
-          # }
-          # memory_reservation = 100
-        }
-      }
+      #     enable_cloudwatch_logging = false
+      #     # log_configuration = {
+      #     #   logDriver = "awsfirelens"
+      #     #   options = {
+      #     #     Name                    = "firehose"
+      #     #     region                  = "eu-west-1"
+      #     #     delivery_stream         = "my-stream"
+      #     #     log-driver-buffer-limit = "2097152"
+      #     #   }
+      #     # }
+      #     # memory_reservation = 100
+      #   }
+      # }
 
       # service_connect_configuration = {
       #   namespace = "${local.name_prefix}"
@@ -182,5 +161,7 @@ resource "aws_ssm_parameter" "ecs_resource_output" {
   value       = jsonencode({
     "cluster_name" : module.ecs.cluster_name,
     "service_name" : keys(module.ecs.services)[0]   //lookup(module.ecs.services["service_a"], "url", "test_service_name")
+    "task_definition": "",
+    "task_definition_family": ""
   })
 }
