@@ -104,11 +104,12 @@ jobs:
 
   create_ecs_resource:
     name: Create ECS Cluster & Task Definition
-      
+
     defaults:
       run:
         shell: bash
 
+    needs: create_network_resources
     runs-on: ubuntu-latest
 
     steps:
@@ -197,6 +198,7 @@ jobs:
       run:
         shell: bash
 
+    needs: create_ecs_resource
     runs-on: ubuntu-latest
 
     steps:
