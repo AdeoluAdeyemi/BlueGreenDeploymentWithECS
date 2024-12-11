@@ -1,0 +1,281 @@
+name: BlueGreenDeploymentWithECS Infra Workflow
+
+#Events
+on:
+  push:
+    branches: [ infra ]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1  
+  PROJECT_NAME: bgd-dpl
+  PROJECT_ENV: dev                 
+  DOCKER_BUILD_DIR: ./
+  DOCKER_FILE: Dockerfile
+
+#Jobs
+jobs:
+  create_network_resources:
+    name: Create AWS Infrastructure with TF
+    defaults:
+      run:
+        shell: bash
+
+    runs-on: ubuntu-latest
+
+    steps:
+      #====================================#
+      # Checkout repository into runner
+      #====================================#
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: network-resources/  # the branch that contains the Terraform code
+
+      #====================================#
+      # Configure AWS credentials
+      #====================================#
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      #======================================#
+      # Install Terraform and its dependencies
+      #======================================#
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3.1.1
+        with:
+          terraform_version: 1.8.5
+          
+
+      #================================#
+      # Dynamically create tfvars file
+      #================================#
+      - name: Generate tfvars file
+        id: tfvars
+        run: |
+          touch prod.tfvars
+          echo "aws_region = \"${{ env.AWS_REGION }}\"" >> prod.tfvars
+          echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> prod.tfvars
+          echo "environment = \"${{ env.PROJECT_ENV }}\"" >> prod.tfvars
+
+          cat prod.tfvars
+        working-directory: network-resources/
+
+      #=============================#
+      # Terraform Init
+      #=============================#
+      - name: Terraform Init
+        id: init
+        run: terraform init   
+        working-directory: network-resources/
+
+      #=============================#
+      # Terraform Validate.
+      #=============================#
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+        working-directory: network-resources/
+
+      #===================================================#
+      # Terraform Plan AWS VPC, & Other Resources Creation
+      #===================================================#
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan  -var-file="prod.tfvars" -no-color
+        working-directory: network-resources/
+        continue-on-error: true
+
+      #===================================================#
+      # Terraform Apply Infrastructure Creation
+      #===================================================#
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        id: apply
+        working-directory: network-resources/
+        run: terraform apply  -var-file="prod.tfvars" -auto-approve
+
+  create_ecs_resource:
+    name: Create ECS Cluster & Task Definition
+
+    defaults:
+      run:
+        shell: bash
+
+    needs: create_network_resources
+    runs-on: ubuntu-latest
+
+    steps:
+      #====================================#
+      # Checkout repository into runner
+      #====================================#
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ecs-resources/  # the branch that contains the Terraform code
+
+      #====================================#
+      # Configure AWS credentials
+      #====================================#
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      #======================================#
+      # Install Terraform and its dependencies
+      #======================================#
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3.1.1
+        with:
+          terraform_version: 1.8.5
+          
+
+      #================================#
+      # Dynamically create tfvars file
+      #================================#
+      - name: Generate tfvars file
+        id: tfvars
+        run: |
+          touch prod.tfvars
+          echo "aws_region = \"${{ env.AWS_REGION }}\"" >> prod.tfvars
+          echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> prod.tfvars
+          echo "environment = \"${{ env.PROJECT_ENV }}\"" >> prod.tfvars
+
+          cat prod.tfvars
+        working-directory: ecs-resources/
+
+      #=============================#
+      # Terraform Init
+      #=============================#
+      - name: Terraform Init
+        id: init
+        run: terraform init   
+        working-directory: ecs-resources/
+
+      #=============================#
+      # Terraform Validate.
+      #=============================#
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+        working-directory: ecs-resources/
+
+      #===================================================#
+      # Terraform Plan AWS VPC, & Other Resources Creation
+      #===================================================#
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan  -var-file="prod.tfvars" -no-color
+        working-directory: ecs-resources/
+        continue-on-error: true
+
+      #===================================================#
+      # Terraform Apply Infrastructure Creation
+      #===================================================#
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        id: apply
+        working-directory: ecs-resources/
+        run: terraform apply  -var-file="prod.tfvars" -auto-approve
+
+  create_codedeploy_resource:
+    name: Create CodeDeploy Resources
+      
+    defaults:
+      run:
+        shell: bash
+
+    needs: create_ecs_resource
+    runs-on: ubuntu-latest
+
+    steps:
+      #====================================#
+      # Checkout repository into runner
+      #====================================#
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: codedeploy-resources/  # the branch that contains the Terraform code
+
+      #====================================#
+      # Configure AWS credentials
+      #====================================#
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      #======================================#
+      # Install Terraform and its dependencies
+      #======================================#
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3.1.1
+        with:
+          terraform_version: 1.8.5
+          
+
+      #================================#
+      # Dynamically create tfvars file
+      #================================#
+      - name: Generate tfvars file
+        id: tfvars
+        run: |
+          touch prod.tfvars
+          echo "aws_region = \"${{ env.AWS_REGION }}\"" >> prod.tfvars
+          echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> prod.tfvars
+          echo "environment = \"${{ env.PROJECT_ENV }}\"" >> prod.tfvars
+
+          cat prod.tfvars
+        working-directory: codedeploy-resources/
+
+      #=============================#
+      # Terraform Init
+      #=============================#
+      - name: Terraform Init
+        id: init
+        run: terraform init   
+        working-directory: codedeploy-resources/
+
+      #=============================#
+      # Terraform Validate.
+      #=============================#
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+        working-directory: codedeploy-resources/
+
+      #===================================================#
+      # Terraform Plan AWS VPC, & Other Resources Creation
+      #===================================================#
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan  -var-file="prod.tfvars" -no-color
+        working-directory: codedeploy-resources/
+        continue-on-error: true
+
+      #===================================================#
+      # Terraform Apply Infrastructure Creation
+      #===================================================#
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        id: apply
+        working-directory: codedeploy-resources/
+        run: terraform apply  -var-file="prod.tfvars" -auto-approve
