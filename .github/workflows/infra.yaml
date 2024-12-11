@@ -146,12 +146,12 @@ jobs:
       - name: Generate tfvars file
         id: tfvars
         run: |
-          touch prod.tfvars
-          echo "aws_region = \"${{ env.AWS_REGION }}\"" >> prod.tfvars
-          echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> prod.tfvars
-          echo "environment = \"${{ env.PROJECT_ENV }}\"" >> prod.tfvars
+          touch prod.auto.tfvars
+          echo "aws_region = \"${{ env.AWS_REGION }}\"" >> prod.auto.tfvars
+          echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> prod.auto.tfvars
+          echo "environment = \"${{ env.PROJECT_ENV }}\"" >> prod.auto.tfvars
 
-          cat prod.tfvars
+          cat prod.auto.tfvars
         working-directory: infra/ecs-resources/
 
       #=============================#
@@ -175,7 +175,7 @@ jobs:
       #===================================================#
       - name: Terraform Plan
         id: plan
-        run: terraform plan  -var-file="prod.tfvars" -no-color
+        run: terraform plan -no-color
         working-directory: infra/ecs-resources/
         continue-on-error: true
 
@@ -189,7 +189,7 @@ jobs:
       - name: Terraform Apply
         id: apply
         working-directory: infra/ecs-resources/
-        run: terraform apply  -var-file="prod.tfvars" -auto-approve
+        run: terraform apply -auto-approve
 
   create_codedeploy_resource:
     name: Create CodeDeploy Resources
@@ -235,12 +235,12 @@ jobs:
       - name: Generate tfvars file
         id: tfvars
         run: |
-          touch prod.tfvars
-          echo "aws_region = \"${{ env.AWS_REGION }}\"" >> prod.tfvars
-          echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> prod.tfvars
-          echo "environment = \"${{ env.PROJECT_ENV }}\"" >> prod.tfvars
+          touch prod.auto.tfvars
+          echo "aws_region = \"${{ env.AWS_REGION }}\"" >> prod.auto.tfvars
+          echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> prod.auto.tfvars
+          echo "environment = \"${{ env.PROJECT_ENV }}\"" >> prod.auto.tfvars
 
-          cat prod.tfvars
+          cat prod.auto.tfvars
         working-directory: infra/codedeploy-resources/
 
       #=============================#
@@ -264,7 +264,7 @@ jobs:
       #===================================================#
       - name: Terraform Plan
         id: plan
-        run: terraform plan  -var-file="prod.tfvars" -no-color
+        run: terraform plan -no-color
         working-directory: infra/codedeploy-resources/
         continue-on-error: true
 
@@ -278,4 +278,4 @@ jobs:
       - name: Terraform Apply
         id: apply
         working-directory: infra/codedeploy-resources/
-        run: terraform apply  -var-file="prod.tfvars" -auto-approve
+        run: terraform apply -auto-approve
