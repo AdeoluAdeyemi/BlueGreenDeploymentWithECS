@@ -161,7 +161,5 @@ resource "aws_ssm_parameter" "ecs_resource_output" {
   value       = jsonencode({
     "cluster_name" : module.ecs.cluster_name,
     "service_name" : keys(module.ecs.services)[0]   //lookup(module.ecs.services["service_a"], "url", "test_service_name")
-    "task_definition": "",
-    "task_definition_family": ""
   })
 }
