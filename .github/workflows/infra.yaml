@@ -118,7 +118,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: infra/  # the branch that contains the Terraform code
+          ref: infra  # the branch that contains the Terraform code
 
       #====================================#
       # Configure AWS credentials
@@ -208,7 +208,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: infra/  # the branch that contains the Terraform code
+          ref: infra  # the branch that contains the Terraform code
 
       #====================================#
       # Configure AWS credentials
