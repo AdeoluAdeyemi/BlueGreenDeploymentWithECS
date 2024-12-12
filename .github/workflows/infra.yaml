@@ -53,16 +53,16 @@ jobs:
       #================================#
       # Dynamically create tfvars file
       #================================#
-      - name: Generate tfvars file
-        id: tfvars
-        run: |
-          touch dev.tfvars
-          echo "aws_region = \"${{ env.AWS_REGION }}\"" >> dev.tfvars
-          echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> dev.tfvars
-          echo "environment = \"${{ env.PROJECT_ENV }}\"" >> dev.tfvars
+      # - name: Generate tfvars file
+      #   id: tfvars
+      #   run: |
+      #     touch dev.tfvars
+      #     echo "aws_region = \"${{ env.AWS_REGION }}\"" >> dev.tfvars
+      #     echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> dev.tfvars
+      #     echo "environment = \"${{ env.PROJECT_ENV }}\"" >> dev.tfvars
 
-          cat dev.tfvars
-        working-directory: infra/network-resources/
+      #     cat dev.tfvars
+      #   working-directory: infra/network-resources/
 
       #=============================#
       # Terraform Init
@@ -85,7 +85,7 @@ jobs:
       #===================================================#
       - name: Terraform Plan
         id: plan
-        run: terraform plan  -var-file="dev.tfvars" -no-color
+        run: terraform plan -no-color
         working-directory: infra/network-resources/
         continue-on-error: true
 
@@ -99,7 +99,7 @@ jobs:
       - name: Terraform Apply
         id: apply
         working-directory: infra/network-resources/
-        run: terraform apply  -var-file="dev.tfvars" -auto-approve
+        run: terraform apply -auto-approve
 
   create_ecs_resource:
     name: Create ECS Cluster & Task Definition
@@ -143,16 +143,16 @@ jobs:
       #================================#
       # Dynamically create tfvars file..
       #================================#
-      - name: Generate tfvars file
-        id: tfvars
-        run: |
-          touch dev.auto.tfvars
-          echo "aws_region = \"${{ env.AWS_REGION }}\"" >> dev.auto.tfvars
-          echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> dev.auto.tfvars
-          echo "environment = \"${{ env.PROJECT_ENV }}\"" >> dev.auto.tfvars
+      # - name: Generate tfvars file
+      #   id: tfvars
+      #   run: |
+      #     touch dev.auto.tfvars
+      #     echo "aws_region = \"${{ env.AWS_REGION }}\"" >> dev.auto.tfvars
+      #     echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> dev.auto.tfvars
+      #     echo "environment = \"${{ env.PROJECT_ENV }}\"" >> dev.auto.tfvars
 
-          cat dev.auto.tfvars
-        working-directory: infra/ecs-resources/
+      #     cat dev.auto.tfvars
+      #   working-directory: infra/ecs-resources/
 
       #=============================#
       # Terraform Init
@@ -232,16 +232,16 @@ jobs:
       #================================#
       # Dynamically create tfvars file
       #================================#
-      - name: Generate tfvars file
-        id: tfvars
-        run: |
-          touch dev.auto.tfvars
-          echo "aws_region = \"${{ env.AWS_REGION }}\"" >> dev.auto.tfvars
-          echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> dev.auto.tfvars
-          echo "environment = \"${{ env.PROJECT_ENV }}\"" >> dev.auto.tfvars
+      # - name: Generate tfvars file
+      #   id: tfvars
+      #   run: |
+      #     touch dev.auto.tfvars
+      #     echo "aws_region = \"${{ env.AWS_REGION }}\"" >> dev.auto.tfvars
+      #     echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> dev.auto.tfvars
+      #     echo "environment = \"${{ env.PROJECT_ENV }}\"" >> dev.auto.tfvars
 
-          cat dev.auto.tfvars
-        working-directory: infra/codedeploy-resources/
+      #     cat dev.auto.tfvars
+      #   working-directory: infra/codedeploy-resources/
 
       #=============================#
       # Terraform Init
