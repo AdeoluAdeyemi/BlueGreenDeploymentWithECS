@@ -108,16 +108,16 @@ jobs:
       #================================#
       # Dynamically create tfvars file
       #================================#
-      - name: Generate tfvars file
-        id: tfvars
-        run: |
-          touch prod.tfvars
-          echo "aws_region = \"${{ env.AWS_REGION }}\"" >> prod.tfvars
-          echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> prod.tfvars
-          echo "environment = \"${{ env.PROJECT_ENV }}\"" >> prod.tfvars
+      # - name: Generate tfvars file
+      #   id: tfvars
+      #   run: |
+      #     touch prod.tfvars
+      #     echo "aws_region = \"${{ env.AWS_REGION }}\"" >> prod.tfvars
+      #     echo "project_name = \"${{ env.PROJECT_NAME }}\"" >> prod.tfvars
+      #     echo "environment = \"${{ env.PROJECT_ENV }}\"" >> prod.tfvars
 
-          cat prod.tfvars
-        working-directory: infra/ecs-resources/task-definition/
+      #     cat prod.tfvars
+      #   working-directory: infra/ecs-resources/task-definition/
 
       #=============================#
       # Terraform Init
@@ -140,7 +140,7 @@ jobs:
       #===================================================#
       - name: Terraform Plan
         id: plan
-        run: terraform plan  -var-file="prod.tfvars" -no-color
+        run: terraform plan -no-color
         working-directory: infra/ecs-resources/task-definition/
         continue-on-error: true
 
@@ -154,5 +154,5 @@ jobs:
       - name: Terraform Apply
         id: apply
         working-directory: infra/ecs-resources/task-definition/
-        run: terraform apply  -var-file="prod.tfvars" -auto-approve
+        run: terraform apply -auto-approve
   
